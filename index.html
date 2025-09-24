@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Davao Doctors Hospital Directory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ddh-green': '#06b6d4',
+            'ddh-dark': '#171717',
+            'ddh-light': '#f0f9ff',
+          },
+          fontFamily: {
+            'sans': ['Poppins', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      user-select: none;
+    }
+    .screen {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .screen.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 h-screen overflow-hidden">
+  <div class="flex flex-col h-screen">
+    <!-- Header -->
+    <header class="bg-[#617762] text-white py-8 px-6 shadow-lg relative">
+      <button id="backButton" class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all hidden" onclick="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="flex flex-col items-center justify-center text-center">
+        <img src="./images/logo.png" class="w-[400px] h-auto" alt="Davao Doctors Hospital Logo">
+        <p class="text-2xl opacity-90">Interactive Directory & Navigation System</p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- Home Screen -->
+      <div id="home" class="screen active">
+        <!-- Search Section -->
+        <div class="max-w-2xl mx-auto mb-8">
+          <div class="relative">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search doctors, departments, or services..."
+              class="w-full px-8 py-6 pr-16 text-2xl shadow-sm rounded-xl focus:outline-none focus:border-ddh-dark transition-colors"
+            >
+            <i class="fa-solid fa-search absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 text-2xl"></i>
+          </div>
+        </div>
+
+        <!-- Category Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('doctors')">
+            <i class="fa-solid fa-user-md text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">Find Doctors</h3>
+            <p class="text-lg text-gray-600">Browse our medical specialists</p>
+          </div>
+
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('departments')">
+            <i class="fa-solid fa-hospital text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">Departments</h3>
+            <p class="text-lg text-gray-600">Locate hospital departments</p>
+          </div>
+
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('services')">
+            <i class="fa-solid fa-stethoscope text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">Services</h3>
+            <p class="text-lg text-gray-600">Available medical services</p>
+          </div>
+
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('map')">
+            <i class="fa-solid fa-map-location-dot text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">Interactive Map</h3>
+            <p class="text-lg text-gray-600">Navigate the hospital</p>
+          </div>
+
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('partners')">
+            <i class="fa-solid fa-handshake text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">Partners</h3>
+            <p class="text-lg text-gray-600">Cafés, shops & services</p>
+          </div>
+
+          <div class="bg-white p-8 text-center rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-ddh-dark transition-all cursor-pointer group" onclick="showScreen('announcements')">
+            <i class="fa-solid fa-bullhorn text-7xl text-emerald-600 mb-6 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-3xl font-semibold text-gray-800 mb-3">News & Events</h3>
+            <p class="text-lg text-gray-600">Latest announcements</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctors Screen -->
+      <div id="doctors" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            Medical Specialists
+          </h2>
+
+          <div class="space-y-4">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center gap-6 hover:border-ddh-dark transition-all">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-3xl flex-shrink-0">
+                <i class="fa-solid fa-user-md"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-2xl font-semibold text-gray-800">Dr. Juan dela Cruz</h4>
+                <p class="text-lg text-gray-600">Cardiology • Room 301 • Available Today</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showDoctorProfile('Dr. Juan dela Cruz', 'Cardiology')">
+                View Profile
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center gap-6 hover:border-ddh-dark transition-all">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-3xl flex-shrink-0">
+                <i class="fa-solid fa-user-md"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-2xl font-semibold text-gray-800">Dr. Maria Santos</h4>
+                <p class="text-lg text-gray-600">Pediatrics • Room 205 • Available Today</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showDoctorProfile('Dr. Maria Santos', 'Pediatrics')">
+                View Profile
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center gap-6 hover:border-ddh-dark transition-all">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-3xl flex-shrink-0">
+                <i class="fa-solid fa-user-md"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-2xl font-semibold text-gray-800">Dr. Roberto Reyes</h4>
+                <p class="text-lg text-gray-600">Orthopedics • Room 402 • Available Tomorrow</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showDoctorProfile('Dr. Roberto Reyes', 'Orthopedics')">
+                View Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctor Profile -->
+      <div id="doctorProfile" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            Doctor Profile
+          </h2>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="flex items-center gap-6 pb-6 border-b border-gray-200 mb-6">
+              <div class="w-32 h-32 bg-gradient-to-br from-ddh-dark to-ddh-teal rounded-full flex items-center justify-center text-white text-5xl">
+                <i class="fa-solid fa-user-md"></i>
+              </div>
+              <div>
+                <h3 id="doctorName" class="text-3xl font-bold text-gray-800 mb-2">Dr. Juan dela Cruz</h3>
+                <p class="text-xl text-gray-600"><strong>Specialization:</strong> <span id="doctorSpec">Cardiology</span></p>
+                <p class="text-xl text-gray-600"><strong>Status:</strong> <span class="text-emerald-600">Available Today</span></p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="flex items-start gap-4 p-6 bg-ddh-light rounded-lg">
+                <i class="fa-solid fa-calendar text-ddh-dark text-3xl mt-1"></i>
+                <div>
+                  <strong class="block text-gray-800">Schedule</strong>
+                  <span class="text-gray-600">Monday - Friday, 9:00 AM - 5:00 PM</span>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 p-4 bg-ddh-light rounded-lg">
+                <i class="fa-solid fa-phone text-ddh-dark text-xl mt-1"></i>
+                <div>
+                  <strong class="block text-gray-800">Contact</strong>
+                  <span class="text-gray-600">(082) 123-4567</span>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 p-4 bg-ddh-light rounded-lg">
+                <i class="fa-solid fa-location-dot text-ddh-dark text-xl mt-1"></i>
+                <div>
+                  <strong class="block text-gray-800">Location</strong>
+                  <span class="text-gray-600">Room 301, 3rd Floor</span>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 p-4 bg-ddh-light rounded-lg">
+                <i class="fa-solid fa-envelope text-ddh-dark text-xl mt-1"></i>
+                <div>
+                  <strong class="block text-gray-800">Email</strong>
+                  <span class="text-gray-600">juan.delacruz@ddh.com.ph</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="w-full flex gap-4 justify-center">
+              <button class="px-8 py-5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium w-full flex items-center justify-center gap-3 text-xl" onclick="showScreen('map')">
+                <i class="fa-solid fa-directions text-2xl"></i> Get Directions
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Departments Screen -->
+      <div id="departments" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            Hospital Departments
+          </h2>
+
+          <div class="space-y-5">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Laboratory Services</h4>
+                <p class="text-lg text-gray-600">2nd Floor, Wing A • Open 24/7</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Get Directions
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Radiology Department</h4>
+                <p class="text-lg text-gray-600">1st Floor, Wing B • Mon-Sat 8AM-6PM</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Get Directions
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Emergency Room</h4>
+                <p class="text-lg text-gray-600">Ground Floor • Open 24/7</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Get Directions
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services Screen -->
+      <div id="services" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            Medical Services
+          </h2>
+
+          <div class="space-y-5">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Emergency Care</h4>
+                <p class="text-lg text-gray-600">24/7 Emergency medical services</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Locate
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Pharmacy</h4>
+                <p class="text-lg text-gray-600">Prescription and over-the-counter medications</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Locate
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Imaging Services</h4>
+                <p class="text-lg text-gray-600">X-ray, CT scan, MRI, Ultrasound</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Locate
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Screen -->
+      <div id="map" class="screen">
+        <div class="max-w-8xl mx-auto">
+          <h2 class="text-3xl text-center font-bold text-gray-800 mb-8">
+            Interactive Hospital Map
+          </h2>
+
+          <div class="flex gap-6">
+            <div id="hospitalMap" class="rounded-xl w-full h-[500px] z-10 relative"></div>
+            <div class="bg-white w-[300px] p-6 rounded-lg shadow-sm">
+              <h3 class="font-semibold text-2xl text-gray-800 mb-4">Legend</h3>
+              <div class="flex flex-col gap-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 bg-blue-500 rounded-full"></div>
+                  <span class="text-lg text-gray-600">Departments</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 bg-green-500 rounded-full"></div>
+                  <span class="text-lg text-gray-600">Services</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 bg-red-500 rounded-full"></div>
+                  <span class="text-lg text-gray-600">Emergency</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-6 h-6 bg-purple-500 rounded-full"></div>
+                  <span class="text-lg text-gray-600">Amenities</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Partners Screen -->
+      <div id="partners" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            Hospital Partners & Services
+          </h2>
+
+          <div class="space-y-5">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Main Cafeteria</h4>
+                <p class="text-lg text-gray-600">1st Floor, Central Area • 6AM - 10PM</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Find Location
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Mercury Drug</h4>
+                <p class="text-lg text-gray-600">Adjacent to Emergency Room • 24/7</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Find Location
+              </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-ddh-dark transition-all">
+              <div>
+                <h4 class="text-2xl font-semibold text-gray-800">Coffee Shop</h4>
+                <p class="text-lg text-gray-600">2nd Floor Lobby • 7AM - 7PM</p>
+              </div>
+              <button class="px-8 py-4 bg-ddh-dark text-white rounded-lg hover:bg-black transition-colors font-medium text-lg" onclick="showScreen('map')">
+                Find Location
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcements Screen -->
+      <div id="announcements" class="screen">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-4xl font-bold text-gray-800 mb-8 flex items-center gap-4">
+            News & Announcements
+          </h2>
+
+          <div class="space-y-5">
+            <div class="bg-white border-l-4 border-red-500 p-8 rounded-lg shadow-sm hover:shadow-md transition-all">
+              <h4 class="text-2xl font-semibold text-red-600 mb-3 flex items-center gap-3">
+                <i class="fa-solid fa-syringe text-3xl"></i> Free Flu Vaccination Drive
+              </h4>
+              <p class="text-lg text-gray-600">Join our free flu vaccination program this Saturday, 8AM - 12PM at the Main Lobby. No appointment necessary. Bring valid ID.</p>
+            </div>
+
+            <div class="bg-white border-l-4 border-green-500 p-8 rounded-lg shadow-sm hover:shadow-md transition-all">
+              <h4 class="text-2xl font-semibold text-green-600 mb-3 flex items-center gap-3">
+                <i class="fa-solid fa-percent text-3xl"></i> Partner Pharmacy Discount
+              </h4>
+              <p class="text-lg text-gray-600">Enjoy 10% discount on all medications at our partner pharmacy with your hospital prescription. Valid until end of month.</p>
+            </div>
+
+            <div class="bg-white border-l-4 border-blue-500 p-8 rounded-lg shadow-sm hover:shadow-md transition-all">
+              <h4 class="text-2xl font-semibold text-blue-600 mb-3 flex items-center gap-3">
+                <i class="fa-solid fa-heart text-3xl"></i> Heart Health Seminar
+              </h4>
+              <p class="text-lg text-gray-600">Free heart health screening and educational seminar next Friday, 2PM - 4PM. Register at the Information Desk.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    let navigationHistory = ['home'];
+
+    let hospitalMapInstance = null;
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+
+      document.getElementById(screenId).classList.add('active');
+
+      if (navigationHistory[navigationHistory.length - 1] !== screenId) {
+        navigationHistory.push(screenId);
+      }
+
+
+      const backButton = document.getElementById('backButton');
+      if (screenId === 'home') {
+        backButton.classList.add('hidden');
+      } else {
+        backButton.classList.remove('hidden');
+      }
+
+      // Initialize map when map screen is shown
+      if (screenId === 'map' && !hospitalMapInstance) {
+        setTimeout(initializeHospitalMap, 100);
+      }
+    }
+
+    function goBack() {
+      if (navigationHistory.length > 1) {
+        navigationHistory.pop();
+        const previousScreen = navigationHistory[navigationHistory.length - 1];
+        showScreen(previousScreen);
+      }
+    }
+
+    function showDoctorProfile(name, specialization) {
+      document.getElementById('doctorName').textContent = name;
+      document.getElementById('doctorSpec').textContent = specialization;
+      showScreen('doctorProfile');
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      if (searchTerm.length > 2) {
+        performSearch(searchTerm);
+      }
+    });
+
+    function performSearch(term) {
+      const searchData = {
+        doctors: ['Dr. Juan dela Cruz', 'Dr. Maria Santos', 'Dr. Roberto Reyes'],
+        departments: ['Laboratory Services', 'Radiology Department', 'Emergency Room'],
+        services: ['Emergency Care', 'Pharmacy', 'Imaging Services']
+      };
+
+      let results = [];
+      Object.keys(searchData).forEach(category => {
+        searchData[category].forEach(item => {
+          if (item.toLowerCase().includes(term)) {
+            results.push({ category, item });
+          }
+        });
+      });
+
+      if (results.length > 0) {
+        const firstResult = results[0];
+        if (firstResult.category === 'doctors') {
+          showScreen('doctors');
+        } else if (firstResult.category === 'departments') {
+          showScreen('departments');
+        } else if (firstResult.category === 'services') {
+          showScreen('services');
+        }
+      }
+    }
+
+    document.querySelectorAll('.cursor-pointer, button').forEach(element => {
+      element.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.98)';
+      });
+
+      element.addEventListener('touchend', function() {
+        this.style.transform = '';
+      });
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.relative')) {
+        document.getElementById('searchInput').blur();
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        goBack();
+      }
+
+      const shortcuts = {
+        '1': 'doctors',
+        '2': 'departments',
+        '3': 'services',
+        '4': 'map',
+        '5': 'partners',
+        '6': 'announcements'
+      };
+
+      if (shortcuts[e.key]) {
+        showScreen(shortcuts[e.key]);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      showScreen('home');
+
+      document.body.style.opacity = '0';
+      setTimeout(() => {
+        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.opacity = '1';
+      }, 100);
+
+      setTimeout(() => {
+        const homeScreen = document.getElementById('home');
+        const searchInput = document.getElementById('searchInput');
+        if (homeScreen.classList.contains('active')) {
+          searchInput.focus();
+        }
+      }, 500);
+    });
+
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+    });
+
+    function hapticFeedback() {
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }
+
+    document.querySelectorAll('button, .cursor-pointer').forEach(element => {
+      element.addEventListener('click', hapticFeedback);
+    });
+
+    let idleTimer;
+    const IDLE_TIME = 300000;
+
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        showScreen('home');
+        document.getElementById('searchInput').value = '';
+      }, IDLE_TIME);
+    }
+
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+      document.addEventListener(event, resetIdleTimer, true);
+    });
+
+    resetIdleTimer();
+
+    // Initialize Hospital Map
+    function initializeHospitalMap() {
+      // Create map instance with a simple floor plan view
+      hospitalMapInstance = L.map('hospitalMap', {
+        crs: L.CRS.Simple,
+        minZoom: -1,
+        maxZoom: 2,
+        zoomControl: true,
+        attributionControl: false
+      });
+
+      // Set bounds for the floor plan (adjust as needed)
+      const bounds = [[0, 0], [1000, 1600]];
+
+      // Create a simple floor plan representation using rectangles and markers
+      // Hospital building outline
+      L.rectangle([[100, 200], [900, 1400]], {
+        color: '#617762',
+        weight: 3,
+        fillOpacity: 0.05
+      }).addTo(hospitalMapInstance);
+
+      // Ground Floor
+      L.rectangle([[150, 250], [450, 550]], {
+        color: '#ef4444',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Emergency Room</b><br>Open 24/7');
+
+      L.rectangle([[500, 250], [850, 550]], {
+        color: '#8b5cf6',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Main Lobby & Reception</b>');
+
+      // First Floor
+      L.rectangle([[150, 600], [450, 900]], {
+        color: '#3b82f6',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Radiology Department</b><br>Wing B • Mon-Sat 8AM-6PM');
+
+      L.rectangle([[500, 600], [850, 900]], {
+        color: '#8b5cf6',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Main Cafeteria</b><br>6AM - 10PM');
+
+      // Second Floor
+      L.rectangle([[150, 950], [450, 1250]], {
+        color: '#3b82f6',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Laboratory Services</b><br>Wing A • Open 24/7');
+
+      L.rectangle([[500, 950], [850, 1250]], {
+        color: '#8b5cf6',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Coffee Shop</b><br>7AM - 7PM');
+
+      // Third Floor - Doctors' Offices
+      L.rectangle([[150, 1300], [280, 1380]], {
+        color: '#10b981',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Room 301</b><br>Dr. Juan dela Cruz<br>Cardiology');
+
+      L.rectangle([[320, 1300], [450, 1380]], {
+        color: '#10b981',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Room 302</b><br>Medical Offices');
+
+      L.rectangle([[500, 1300], [650, 1380]], {
+        color: '#10b981',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Room 205</b><br>Dr. Maria Santos<br>Pediatrics');
+
+      L.rectangle([[700, 1300], [850, 1380]], {
+        color: '#10b981',
+        weight: 2,
+        fillOpacity: 0.1
+      }).addTo(hospitalMapInstance).bindPopup('<b>Room 402</b><br>Dr. Roberto Reyes<br>Orthopedics');
+
+      // Add markers for key locations
+      const emergencyIcon = L.divIcon({
+        html: '<i class="fa-solid fa-plus text-red-500 text-2xl"></i>',
+        className: 'custom-div-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+
+      const departmentIcon = L.divIcon({
+        html: '<i class="fa-solid fa-hospital text-blue-500 text-2xl"></i>',
+        className: 'custom-div-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+
+      const serviceIcon = L.divIcon({
+        html: '<i class="fa-solid fa-stethoscope text-green-500 text-2xl"></i>',
+        className: 'custom-div-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+
+      const amenityIcon = L.divIcon({
+        html: '<i class="fa-solid fa-coffee text-purple-500 text-2xl"></i>',
+        className: 'custom-div-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+
+      // Add markers
+      L.marker([400, 300], {icon: emergencyIcon}).addTo(hospitalMapInstance)
+        .bindPopup('<b>Emergency Room</b><br>Ground Floor • Open 24/7');
+
+      L.marker([750, 300], {icon: departmentIcon}).addTo(hospitalMapInstance)
+        .bindPopup('<b>Radiology Department</b><br>1st Floor, Wing B');
+
+      L.marker([1100, 300], {icon: serviceIcon}).addTo(hospitalMapInstance)
+        .bindPopup('<b>Laboratory Services</b><br>2nd Floor, Wing A');
+
+      L.marker([1100, 675], {icon: amenityIcon}).addTo(hospitalMapInstance)
+        .bindPopup('<b>Main Cafeteria</b><br>1st Floor');
+
+      L.marker([1100, 500], {icon: amenityIcon}).addTo(hospitalMapInstance)
+        .bindPopup('<b>Coffee Shop</b><br>2nd Floor Lobby');
+
+      // Text labels for floors
+      L.marker([50, 400], {
+        icon: L.divIcon({
+          html: '<div class="text-lg font-bold text-gray-700">Ground Floor</div>',
+          className: 'text-label',
+          iconSize: [100, 20]
+        })
+      }).addTo(hospitalMapInstance);
+
+      L.marker([50, 750], {
+        icon: L.divIcon({
+          html: '<div class="text-lg font-bold text-gray-700">1st Floor</div>',
+          className: 'text-label',
+          iconSize: [100, 20]
+        })
+      }).addTo(hospitalMapInstance);
+
+      L.marker([50, 1100], {
+        icon: L.divIcon({
+          html: '<div class="text-lg font-bold text-gray-700">2nd Floor</div>',
+          className: 'text-label',
+          iconSize: [100, 20]
+        })
+      }).addTo(hospitalMapInstance);
+
+      L.marker([50, 1340], {
+        icon: L.divIcon({
+          html: '<div class="text-lg font-bold text-gray-700">3rd Floor</div>',
+          className: 'text-label',
+          iconSize: [100, 20]
+        })
+      }).addTo(hospitalMapInstance);
+
+      // Set initial view
+      hospitalMapInstance.fitBounds(bounds);
+    }
+  </script>
+</body>
+</html>
